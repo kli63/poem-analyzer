@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Poetry Analysis Tool
 
-## Getting Started
+An interactive web application for analyzing poetry using AI assistance. This tool allows users to upload poems and receive detailed feedback on specific words, lines, and poetic devices.
 
-First, run the development server:
+## Features
 
+- Upload and parse poetry files
+- Interactive word and line selection
+- AI-powered analysis of poetic elements
+- Real-time feedback with context awareness
+- Support for technical poetry aspects (enjambment, etc.)
+
+## Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+- OpenAI API key
+
+## Project Setup
+
+This project uses Next.js with TypeScript and Tailwind CSS, integrating shadcn/ui components.
+
+### Option 1: Fresh Installation
+
+1. Create a new Next.js project with the app router:
+```bash
+npx create-next-app@latest poetry-analysis-tool --typescript --tailwind --eslint
+cd poetry-analysis-tool
+```
+
+2. Run the setup script to install additional dependencies:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+3. Configure your environment variable:
+```bash
+echo "NEXT_PUBLIC_OPENAI_API_KEY=your_api_key_here" > .env.local
+```
+
+### Option 2: Using Existing Project
+
+If you're adding this to an existing Next.js project:
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/poetry-analysis-tool.git
+cd poetry-analysis-tool
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Create your `.env.local`:
+```bash
+echo "NEXT_PUBLIC_OPENAI_API_KEY=your_api_key_here" > .env.local
+```
+
+4. Start the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+poetry-analysis-tool/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── ui/
+│   │   │   └── alert.tsx
+│   │   ├── ChatInterface.tsx
+│   │   └── PoemAnalyzer.tsx
+│   ├── lib/
+│   │   └── openai.ts
+│   └── types/
+│       ├── poem.ts
+│       └── util.ts
+├── .env.local
+├── .gitignore
+├── package.json
+├── setup.sh
+├── tailwind.config.ts
+└── tsconfig.json
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Dependencies
 
-## Learn More
+The project requires several dependencies that are handled by the setup script:
 
-To learn more about Next.js, take a look at the following resources:
+### Core Dependencies
+- next
+- react
+- react-dom
+- openai
+- lucide-react
+- typescript
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### UI Dependencies (shadcn/ui)
+- @radix-ui/react-alert-dialog
+- @radix-ui/react-slot
+- class-variance-authority
+- clsx
+- tailwind-merge
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Development Dependencies
+- eslint
+- eslint-config-next
+- autoprefixer
+- postcss
+- tailwindcss
+- typescript
+- @types/node
+- @types/react
+- @types/react-dom
 
-## Deploy on Vercel
+## Environment Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Get an OpenAI API key:
+   - Visit [OpenAI's platform](https://platform.openai.com/)
+   - Sign up or log in
+   - Go to API keys section
+   - Create a new secret key
+   - Save the key (it won't be shown again)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. Configure your environment:
+   - Create `.env.local` in the project root
+   - Add your OpenAI API key
+   - Never commit this file to version control
+
+## Usage
+
+1. Start the application
+2. Click "Upload Poem" to load a .txt file containing your poem
+3. Select either "Word Mode" or "Line Mode"
+4. Click on words or lines to receive AI analysis
+5. Add context in the text area for more specific feedback
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Built with Next.js 13+ (App Router)
+- Styled with Tailwind CSS
+- AI powered by OpenAI's GPT-4
+- UI components from shadcn/ui
+
+## Security Notes
+
+1. Never commit `.env.local` or expose your OpenAI API key
+2. The project includes a `.gitignore` file to prevent accidental exposure
+3. Always verify no sensitive data is included in commits
+4. In production, consider moving API calls to secure backend endpoints
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Ensure Node.js version is 16 or higher
+2. Verify all dependencies are installed
+3. Check that `.env.local` is properly configured
+4. Confirm Tailwind CSS is properly set up
+5. Verify shadcn/ui components are correctly imported

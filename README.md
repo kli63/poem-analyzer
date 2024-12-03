@@ -24,8 +24,8 @@ This project uses Next.js with TypeScript and Tailwind CSS, integrating shadcn/u
 
 1. Create a new Next.js project with the app router:
 ```bash
-npx create-next-app@latest poetry-analysis-tool --typescript --tailwind --eslint
-cd poetry-analysis-tool
+npx create-next-app@latest poem-analyzer --typescript --tailwind --eslint
+cd poem-analyzer
 ```
 
 2. Run the setup script to install additional dependencies:
@@ -45,8 +45,8 @@ If you're adding this to an existing Next.js project:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/poetry-analysis-tool.git
-cd poetry-analysis-tool
+git clone https://github.com/kli63/poem-analyzer.git
+cd poem-analyzer
 ```
 
 2. Install dependencies:
@@ -56,7 +56,7 @@ npm install
 yarn install
 ```
 
-3. Create your `.env.local`:
+3. Create your `.env.local` and replace with your API key:
 ```bash
 echo "NEXT_PUBLIC_OPENAI_API_KEY=your_api_key_here" > .env.local
 ```
@@ -71,7 +71,7 @@ yarn dev
 ## Project Structure
 
 ```
-poetry-analysis-tool/
+poem-analyzer/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx

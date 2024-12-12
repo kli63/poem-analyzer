@@ -38,7 +38,7 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
   };
 
   const handleSelection = (item: Word | Line) => {
-    // Show the prompt as an alert for sanity check
+    // show the prompt as an alert for sanity check lol
     const prompt = `
       Poem: ${poem?.toString()}
       
@@ -47,7 +47,7 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
     `;
     alert(item.getMetadata());
 
-    // Pass the selection to ChatInterface
+    // pass the selection to ChatInterface
     if (chatInterfaceRef.current?.handleUserSelection) {
       chatInterfaceRef.current.handleUserSelection(item);
     }

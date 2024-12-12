@@ -62,7 +62,6 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
       const isWord = unit instanceof Word;
       const prompt = bot['createPrompt'](poem, unit, userContext);
       
-      // Add user query with metadata and prompt
       setMessages(prev => [...prev, {
         type: 'user',
         content: `Analyze this ${isWord ? 'word' : 'line'}: "${unit.toString()}"`,
@@ -70,7 +69,6 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
         prompt: prompt
       }]);
 
-      // Use the Bot class to generate the response
       await bot.generateResponse(poem, unit, userContext);
     };
 

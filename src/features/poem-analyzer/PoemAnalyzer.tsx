@@ -59,8 +59,8 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
               Upload New Poem
             </button>
           </div>
-          <div className="flex-grow flex gap-4">
-            <div className="w-1/2 border rounded-lg p-4 overflow-y-auto">
+          <div className="flex-grow flex gap-4 min-h-0">
+            <div className="w-1/2 border rounded-lg overflow-hidden">
               {poem && (
                 <PoemDisplay
                   poem={poem}
@@ -69,7 +69,7 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
                 />
               )}
             </div>
-            <div className="w-1/2 border rounded-lg">
+            <div className="w-1/2 border rounded-lg overflow-hidden">
               <ChatInterface 
                 ref={chatInterfaceRef}
                 poem={poem}

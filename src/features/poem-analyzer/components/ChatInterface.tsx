@@ -146,7 +146,7 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
           )}
           {messages.length === 0 && !currentlyTyping && !isLoading && (
             <div className="text-gray-500 text-center mt-4">
-              Select a word or line to begin analysis
+              Select a word or line to receive feedback
             </div>
           )}
         </div>

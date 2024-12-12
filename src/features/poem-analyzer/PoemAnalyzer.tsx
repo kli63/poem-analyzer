@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Poem, Word, Line, Stanza, parsePoemFromText, LineElement, } from '../types/poem';
-import ChatInterface from './ChatInterface';
+import { Poem, Word, Line, Stanza, parsePoemFromText, LineElement, } from './types/poem';
+import ChatInterface from './components/ChatInterface';
 
 interface PoemAnalyzerProps {
   className?: string;

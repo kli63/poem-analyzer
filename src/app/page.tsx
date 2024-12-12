@@ -1,6 +1,6 @@
 'use client'
 
-import PoemAnalyzer from '@/components/PoemAnalyzer'
+import PoemAnalyzer from '@/features/poem-analyzer/PoemAnalyzer'
 
 export default function Home() {
   return (

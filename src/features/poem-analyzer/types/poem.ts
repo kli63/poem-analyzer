@@ -1,4 +1,4 @@
-// src/types/poem.ts
+// src/features/poem-analyzer/types/poem.ts
 
 export enum EnjambmentType {
   NONE = 'None',

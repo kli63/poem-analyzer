@@ -1,9 +1,9 @@
-// src/components/Bot.tsx
+// src/features/poem-analyzer/components/Bot.tsx
 
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Word, Line, Poem } from '../types/poem';
-import { streamCompletion } from '../lib/openai';
+import { streamCompletion } from '../../../lib/openai';
 
 interface BotProps {
   onResponse: (response: string) => void;

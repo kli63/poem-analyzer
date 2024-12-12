@@ -1,4 +1,4 @@
-// src/components/ChatInterface.tsx
+// src/features/poem-analyzer/components/ChatInterface.tsx
 
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Loader2 } from 'lucide-react';

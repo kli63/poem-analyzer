@@ -20,28 +20,7 @@ An interactive web application for analyzing poetry using AI assistance. This to
 
 This project uses Next.js with TypeScript and Tailwind CSS, integrating shadcn/ui components.
 
-### Option 1: Fresh Installation
-
-1. Create a new Next.js project with the app router:
-```bash
-npx create-next-app@latest poem-analyzer --typescript --tailwind --eslint
-cd poem-analyzer
-```
-
-2. Run the setup script to install additional dependencies:
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-3. Configure your environment variable:
-```bash
-echo "NEXT_PUBLIC_OPENAI_API_KEY=your_api_key_here" > .env.local
-```
-
-### Option 2: Using Existing Project
-
-If you're adding this to an existing Next.js project:
+### Option 1: Cloning Existing Project (Recommended)
 
 1. Clone the repository:
 ```bash
@@ -66,6 +45,25 @@ echo "NEXT_PUBLIC_OPENAI_API_KEY=your_api_key_here" > .env.local
 npm run dev
 # or
 yarn dev
+```
+
+### Option 2: Fresh Installation
+
+1. Create a new Next.js project with the app router:
+```bash
+npx create-next-app@latest poem-analyzer --typescript --tailwind --eslint
+cd poem-analyzer
+```
+
+2. Run the setup script to install additional dependencies:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+3. Configure your environment variable:
+```bash
+echo "NEXT_PUBLIC_OPENAI_API_KEY=your_api_key_here" > .env.local
 ```
 
 ## Project Structure

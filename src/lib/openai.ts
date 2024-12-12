@@ -1,5 +1,3 @@
-// src/lib/openai.ts
-
 import OpenAI from 'openai';
 
 export const openai = new OpenAI({
@@ -8,6 +6,12 @@ export const openai = new OpenAI({
 });
 
 export async function* streamCompletion(prompt: string) {
+  if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY === 'your-api-key-here') {
+    console.error('No OpenAI API key detected. Please provide a valid API key.');
+    yield 'No OpenAI API key detected. Please provide a valid API key.';
+    return;
+  }
+
   try {
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-mini',

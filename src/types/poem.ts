@@ -155,9 +155,7 @@ export function parsePoemFromText(text: string, title?: string, author?: string)
     const lineTexts = stanzaText.split('\n');
     const lines: Line[] = [];
 
-    // First pass: create lines
     lineTexts.forEach((lineText, lineIndex) => {
-      // Handle indentation safely
       const indentMatch = lineText.match(/^[\t ]*/) ?? [''];
       let indentation = 0;
       for (const char of indentMatch[0]) {
@@ -167,12 +165,11 @@ export function parsePoemFromText(text: string, title?: string, author?: string)
       const trimmedLine = lineText.slice(indentMatch[0].length);
       const elements: LineElement[] = [];
       
-      // Parse tokens
       const tokenRegex = /([a-zA-Z]+(?:[-''][a-zA-Z]+)*)|([^\w\s])|(\s+)/g;
       let match: RegExpExecArray | null;
 
       while ((match = tokenRegex.exec(trimmedLine)) !== null) {
-        const [fullMatch, word, punctuation, spaces] = match;
+        const [, word, punctuation, spaces] = match;
 
         if (word) {
           elements.push(new Word(word));
@@ -203,7 +200,7 @@ export function parsePoemFromText(text: string, title?: string, author?: string)
       lines.push(new Line(elements, indentation, 0, isEnjambed));
     });
 
-    // Second pass: handle enjambment relationships
+    // Handle enjambment relationships
     lines.forEach((line, lineIndex) => {
       if (line.isEnjambed && lineIndex < lines.length - 1) {
         const currentLineWords = line.getWords();

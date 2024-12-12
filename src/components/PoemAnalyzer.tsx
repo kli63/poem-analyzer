@@ -1,12 +1,18 @@
 // PoemAnalyzer.tsx
 
-import React, { useState, useEffect, useRef, MouseEvent } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Poem, Word, Line, Stanza, parsePoemFromText, LineElement, Punctuation, Whitespace } from '../types/poem';
+import { Poem, Word, Line, Stanza, parsePoemFromText, LineElement, } from '../types/poem';
 import ChatInterface from './ChatInterface';
 
-interface PoemAnalyzerProps {}
+interface PoemAnalyzerProps {
+  className?: string;
+}
+
+type ChatInterfaceRef = {
+  handleUserSelection: (unit: Word | Line) => void;
+};
 
 const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
   const [poem, setPoem] = useState<Poem | null>(null);
@@ -14,7 +20,7 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
   const [selectionMode, setSelectionMode] = useState<'word' | 'line'>('word');
   const [error, setError] = useState<string>('');
   const [fontSize, setFontSize] = useState<number>(16);
-  const chatInterfaceRef = useRef<any>(null);
+  const chatInterfaceRef = useRef<ChatInterfaceRef>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -32,19 +38,13 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
       setPoem(parsedPoem);
       setIsFileUploaded(true);
       setError('');
-    } catch (err) {
+    } catch {
       setError('Error reading file');
     }
   };
 
   const handleSelection = (item: Word | Line) => {
-    // show the prompt as an alert for sanity check lol
-    const prompt = `
-      Poem: ${poem?.toString()}
-      
-      Selected Unit: ${item.toString()}
-      Unit Metadata: ${item.getMetadata()}
-    `;
+    // show the metadata as an alert for sanity check lol
     alert(item.getMetadata());
 
     // pass the selection to ChatInterface
@@ -57,39 +57,41 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
-      if (!containerRef.current || !poem) return;
-
+      if (!containerRef.current) return;
+    
       const adjustFontSize = () => {
-        const container = containerRef.current!;
+        const container = containerRef.current;
+        if (!container) return;
+        
         const containerWidth = container.clientWidth;
         let testSize = 16;
         const minSize = 8;
         const maxSize = 24;
-
+    
         let min = minSize;
         let max = maxSize;
-
+    
         while (min <= max) {
           testSize = Math.floor((min + max) / 2);
           container.style.fontSize = `${testSize}px`;
-
+    
           const isOverflowing = Array.from(container.querySelectorAll('.line-content'))
             .some(line => (line as HTMLElement).scrollWidth > containerWidth);
-
+    
           if (isOverflowing) {
             max = testSize - 1;
           } else {
             min = testSize + 1;
           }
         }
-
+    
         setFontSize(max);
       };
-
+    
       adjustFontSize();
       window.addEventListener('resize', adjustFontSize);
       return () => window.removeEventListener('resize', adjustFontSize);
-    }, [poem]);
+    }, []);
 
     if (!poem) return null;
 

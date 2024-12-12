@@ -14,11 +14,11 @@ interface Message {
 
 interface ChatInterfaceProps {
   poem: Poem | null;
-  onSendMessage: (message: string) => void;
+  onSendMessage?: (message: string) => void;
 }
 
 const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => void }, ChatInterfaceProps>(
-  ({ poem, onSendMessage }, ref) => {
+  ({ poem }, ref) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [userContext, setUserContext] = useState('');
     const [currentlyTyping, setCurrentlyTyping] = useState('');

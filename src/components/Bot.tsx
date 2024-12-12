@@ -1,8 +1,8 @@
 // src/components/Bot.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Loader2 } from 'lucide-react';
-import { Word, Line, Poem, EnjambmentType } from '../types/poem';
+import { Word, Line, Poem } from '../types/poem';
 import { streamCompletion } from '../lib/openai';
 
 interface BotProps {

@@ -1,14 +1,20 @@
 // src/features/poem-analyzer/types/poem.ts
 
+import { RhymeAnalyzer, WordPosition } from './rhyme';
+
 export enum EnjambmentType {
   NONE = 'None',
   END_OF_LINE = 'End of enjambed line',
   START_OF_LINE = 'Start of enjambed line'
 }
-
 export class Word {
   private parentLine: Line | null = null;
   public enjambmentType: EnjambmentType = EnjambmentType.NONE;
+  public rhymePositions: Set<WordPosition> | null = null;
+  public phonemeKey: string | null = null;
+  public lineIndex: number = -1;      // Global line number in poem
+  public stanzaLineIndex: number = -1; // Line number within stanza
+  public stanzaNumber: number = -1;    // Which stanza this word is in
 
   constructor(
     public text: string,
@@ -19,6 +25,12 @@ export class Word {
     this.parentLine = line;
   }
 
+  setPositions(lineIndex: number, stanzaLineIndex: number, stanzaNumber: number) {
+    this.lineIndex = lineIndex;
+    this.stanzaLineIndex = stanzaLineIndex;
+    this.stanzaNumber = stanzaNumber;
+  }
+
   getContext(): string {
     return this.parentLine ? this.parentLine.toString() : '';
   }
@@ -26,8 +38,15 @@ export class Word {
   getMetadata(): string {
     const parts = [
       `Word: "${this.text}"`,
+      `Position: Line ${this.lineIndex + 1} overall, Line ${this.stanzaLineIndex + 1} in Stanza ${this.stanzaNumber}`,
       `Line Context: "${this.getContext()}"`,
-      `Enjambment Status: ${this.enjambmentType}`
+      `Enjambment Status: ${this.enjambmentType}`,
+      `Phoneme Key: ${this.phonemeKey ?? 'None'}`,
+      `Rhymes with: ${this.rhymePositions ? 
+        Array.from(this.rhymePositions).map(pos => 
+          `"${pos.word}" (line ${pos.lineIndex + 1}, stanza ${pos.stanzaNumber})`
+        ).join(', ') : 
+        'No rhymes found'}`
     ];
     return parts.join('\n');
   }
@@ -69,7 +88,6 @@ export class Line {
     public trailingSpaces: number = 0,
     public isEnjambed: boolean = false
   ) {
-    // Set parent line reference for all words
     elements.forEach(element => {
       if (element instanceof Word) {
         element.setParentLine(this);
@@ -117,7 +135,6 @@ export class Stanza {
     public lines: Line[],
     public spacingAfter: number = 1
   ) {
-    // Set parent stanza reference for all lines
     lines.forEach(line => line.setParentStanza(this));
   }
 
@@ -128,6 +145,8 @@ export class Stanza {
 
 export class Poem {
   public stanzas: Stanza[] = [];
+  public rhymeAnalyzer: RhymeAnalyzer = new RhymeAnalyzer();
+  private totalLines: number = 0;
 
   constructor(
     public title?: string,
@@ -135,15 +154,80 @@ export class Poem {
   ) {}
 
   addStanza(stanza: Stanza): void {
+    // const stanzaNumber = this.stanzas.length + 1;
     this.stanzas.push(stanza);
   }
 
-  toString(): string {
-    let poemText = '';
-    if (this.title) poemText += `${this.title}\n\n`;
-    if (this.author) poemText += `by ${this.author}\n\n`;
-    poemText += this.stanzas.map(stanza => stanza.toString()).join('\n\n');
-    return poemText.trim();
+  analyzeRhymes(): void {
+    let globalLineIndex = 0;
+
+    // First pass: build rhyme map
+    this.stanzas.forEach((stanza, stanzaIndex) => {
+      stanza.lines.forEach((line, stanzaLineIndex) => {
+        const words = line.getWords();
+        words.forEach((word, wordIndex) => {
+          // Set position information for the word
+          word.setPositions(globalLineIndex, stanzaLineIndex, stanzaIndex + 1);
+
+          const position: WordPosition = {
+            lineIndex: globalLineIndex,
+            stanzaLineIndex: stanzaLineIndex,
+            stanzaNumber: stanzaIndex + 1,
+            wordIndex: wordIndex,
+            isLineEnd: wordIndex === words.length - 1,
+            word: word.text
+          };
+          this.rhymeAnalyzer.addWord(word, position);
+        });
+        globalLineIndex++;
+      });
+    });
+
+    // Second pass: analyze rhymes
+    this.stanzas.forEach(stanza => {
+      stanza.lines.forEach(line => {
+        const words = line.getWords();
+        words.forEach(word => {
+          word.rhymePositions = this.rhymeAnalyzer.findRhymes(word.text);
+        });
+      });
+    });
+
+    this.totalLines = globalLineIndex;
+  }
+
+  getRhymeScheme(): string[] {
+    const scheme: string[] = [];
+    let nextLabel = 'A';
+    const rhymeLabels = new Map<string, string>();
+
+    this.stanzas.forEach(stanza => {
+      stanza.lines.forEach(line => {
+        const words = line.getWords();
+        if (words.length === 0) {
+          scheme.push('');
+          return;
+        }
+
+        const lastWord = words[words.length - 1];
+        const tempAnalyzer = new RhymeAnalyzer();
+        const key = tempAnalyzer['getPhonemeKey'](lastWord.text);
+        
+        if (!key) {
+          scheme.push('X');
+          return;
+        }
+
+        if (!rhymeLabels.has(key)) {
+          rhymeLabels.set(key, nextLabel);
+          nextLabel = String.fromCharCode(nextLabel.charCodeAt(0) + 1);
+        }
+
+        scheme.push(rhymeLabels.get(key) || 'X');
+      });
+    });
+
+    return scheme;
   }
 }
 
@@ -221,5 +305,8 @@ export function parsePoemFromText(text: string, title?: string, author?: string)
     poem.addStanza(new Stanza(lines));
   });
 
+  // Analyze rhymes after parsing
+  poem.analyzeRhymes();
+  
   return poem;
 }

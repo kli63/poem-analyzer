@@ -1,6 +1,6 @@
 // src/features/poem-analyzer/components/ChatInterface.tsx
 
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Word, Line, Poem } from '../types/poem';
 import { Bot } from './Bot';
@@ -15,16 +15,48 @@ interface Message {
 interface ChatInterfaceProps {
   poem: Poem | null;
   onSendMessage?: (message: string) => void;
+  containerWidthPercent: number;
 }
 
+// src/features/poem-analyzer/components/ChatInterface.tsx
+
+// ... (imports and interface definitions remain the same)
+
 const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => void }, ChatInterfaceProps>(
-  ({ poem }, ref) => {
+  ({ poem, containerWidthPercent }, ref) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [userContext, setUserContext] = useState('');
     const [currentlyTyping, setCurrentlyTyping] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    
+    const [fontSize, setFontSize] = useState<number>(12);
+    const [originalFontSize, setOriginalFontSize] = useState<number>(12);
+
+    const tryFitFontSize = useCallback((desiredSize: number) => {
+      if (!chatContainerRef.current) return desiredSize;
+      let fittedSize = 6;
+      for (let testSize = desiredSize; testSize >= 6; testSize--) {
+        chatContainerRef.current.style.fontSize = `${testSize}px`;
+        const scrollWidth = chatContainerRef.current.scrollWidth;
+        const clientWidth = chatContainerRef.current.clientWidth;
+        if (scrollWidth <= clientWidth) {
+          fittedSize = testSize;
+          break;
+        }
+      }
+      return fittedSize;
+    }, []);
+
+    const refitContent = useCallback(() => {
+      const fittedSize = tryFitFontSize(originalFontSize);
+      setFontSize(prev => prev !== fittedSize ? fittedSize : prev);
+    }, [originalFontSize, tryFitFontSize]);
+
+    useEffect(() => {
+      refitContent();
+    }, [containerWidthPercent, poem, refitContent]);
+
     const bot = new Bot({
       onResponse: (response: string) => {
         setMessages(prev => [...prev, { type: 'bot', content: response }]);
@@ -61,7 +93,7 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
     const handleUserSelection = async (unit: Word | Line) => {
       const isWord = unit instanceof Word;
       const prompt = bot['createPrompt'](poem, unit, userContext);
-      
+
       setMessages(prev => [...prev, {
         type: 'user',
         content: `Analyze this ${isWord ? 'word' : 'line'}: "${unit.toString()}"`,
@@ -72,8 +104,39 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
       await bot.generateResponse(poem, unit, userContext);
     };
 
+    const handleFontSizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newSize = parseInt(event.target.value, 10);
+      if (!isNaN(newSize) && newSize >= 6 && newSize <= 48) {
+        setOriginalFontSize(newSize);
+        const fittedSize = tryFitFontSize(newSize);
+        setFontSize(prev => prev !== fittedSize ? fittedSize : prev);
+      }
+    };
+
+    const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+      const value = parseInt(event.target.value, 10);
+      const sizeToFit = isNaN(value) ? 12 : Math.max(6, Math.min(48, value));
+      setOriginalFontSize(sizeToFit);
+      const fittedSize = tryFitFontSize(sizeToFit);
+      setFontSize(prev => prev !== fittedSize ? fittedSize : prev);
+    };
+
+    const decrementFontSize = () => {
+      const newSize = Math.max(6, originalFontSize - 1);
+      setOriginalFontSize(newSize);
+      const fitted = tryFitFontSize(newSize);
+      setFontSize(prev => prev !== fitted ? fitted : prev);
+    };
+
+    const incrementFontSize = () => {
+      const newSize = Math.min(48, originalFontSize + 1);
+      setOriginalFontSize(newSize);
+      const fitted = tryFitFontSize(newSize);
+      setFontSize(prev => prev !== fitted ? fitted : prev);
+    };
+
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full" style={{height: '100%', boxSizing: 'border-box'}}>
         <div className="p-4 border-b">
           <textarea
             value={userContext}
@@ -88,12 +151,39 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
           </div>
         </div>
 
+        <div className="flex justify-end items-center gap-1 p-2 bg-gray-100 border-b">
+          <button 
+            onClick={decrementFontSize} 
+            disabled={originalFontSize <= 6} 
+            className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            -
+          </button>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            className="text-center w-12 h-6 text-sm border rounded"
+            value={fontSize} // Show current displayed size
+            onChange={handleFontSizeChange}
+            onBlur={handleBlur}
+          />
+          <button
+            onClick={incrementFontSize}
+            disabled={originalFontSize >= 48}
+            className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            +
+          </button>
+        </div>
+
         <div 
           ref={chatContainerRef}
           className="flex-grow bg-gray-50 p-4 overflow-y-auto"
           style={{ 
-            height: 'calc(100vh - 200px)',
-            maxHeight: 'calc(100vh - 200px)'
+            fontSize: `${fontSize}px`, 
+            lineHeight: '1.4',
+            boxSizing: 'border-box'
           }}
         >
           {messages.map((message, index) => (

@@ -22,8 +22,13 @@ export class Bot {
     if (isWord) {
       const wordUnit = unit as Word;
       const rhymeInfo = wordUnit.rhymePositions ? 
-        Array.from(wordUnit.rhymePositions)
-          .map(pos => `"${pos.word}" (line ${pos.lineIndex + 1}, stanza ${pos.stanzaNumber})`)
+        Array.from(wordUnit.rhymePositions.entries())
+          .map(([word, positions]) => 
+            positions.size > 0 ? `"${word}" (${Array.from(positions)
+              .map(pos => `line ${pos.lineIndex + 1}, stanza ${pos.stanzaNumber}`)
+              .join('; ')})` : ''
+          )
+          .filter(s => s)
           .join(', ') : 
         'No rhymes found';
 
@@ -35,7 +40,8 @@ Enjambment Status: ${wordUnit.enjambmentType}
 Phoneme Key: ${wordUnit.phonemeKey ?? 'None'}
 Rhymes with: ${rhymeInfo}`;
 
-      const hasRhymes = (wordUnit.rhymePositions && wordUnit.rhymePositions.size > 0);
+      const hasRhymes = wordUnit.rhymePositions && 
+        Array.from(wordUnit.rhymePositions.values()).some(positions => positions.size > 0);
       if (hasRhymes) {
         specificAnalysis += '\nInclude analysis of how this word\'s rhyme relationships contribute to the poem\'s sound patterns and meaning.';
       }
@@ -81,7 +87,6 @@ Focus on providing concrete, specific feedback about this particular ${isWord ? 
     setIsLoading(true);
     try {
       let fullResponse = '';
-      // Update streamCompletion to accept an options object
       const stream = await streamCompletion({
         prompt,
         signal
@@ -99,7 +104,6 @@ Focus on providing concrete, specific feedback about this particular ${isWord ? 
     } catch (error: unknown) {
       if (error instanceof Error) {
         if (error.name === 'AbortError' || error.message === 'AbortError') {
-          // Request was aborted, don't show error message
         } else {
           console.error('Error generating response:', error);
           onResponse('Sorry, there was an error generating the response. Please try again.');

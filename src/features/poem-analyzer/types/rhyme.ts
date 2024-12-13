@@ -1,29 +1,36 @@
+// handles the analysis and tracking of rhymes in a poem, using the cmu dictionary
+// for phonetic matching
 import { dictionary } from 'cmu-pronouncing-dictionary';
 import { Word } from './poem';
 
 export type WordPosition = {
-  lineIndex: number;        // Global line index in poem
-  stanzaLineIndex: number;  // Line index within stanza
-  stanzaNumber: number;     // 1-based stanza number
-  wordIndex: number;
-  isLineEnd: boolean;
-  word: string;
+  lineIndex: number;        // global line index in poem
+  stanzaLineIndex: number;  // line index within its stanza
+  stanzaNumber: number;     // 1-based stanza number (starts at 1 not 0)
+  wordIndex: number;        // position within its line
+  isLineEnd: boolean;       // whether it's the last word in its line
+  word: string;            // the actual text of the word
 };
 
+// maps lowercase words to all their positions
+export type WordMap = Map<string, Set<WordPosition>>;
+
+// represents a group of rhyming words
 export type RhymeGroup = {
-  phonemeKey: string;
-  words: Set<WordPosition>;
-  frequency: number;
-  stanzaNumber?: number;    // Only present for stanza-specific groups
+  phonemeKey: string;       // the phonetic pattern these words share
+  words: WordMap;          // maps each unique word to all its positions
+  frequency: number;        // how many unique words are in this group
+  stanzaNumber?: number;    // only used for stanza-specific groups
 };
 
-export type RhymeMap = Map<string, Set<WordPosition>>;
-export type StanzaRhymeMap = Map<number, Map<string, Set<WordPosition>>>;
+// maps phoneme keys to word maps
+export type RhymeMap = Map<string, WordMap>;
+// maps stanza numbers to their rhyme maps
+export type StanzaRhymeMap = Map<number, RhymeMap>;
 
 export class RhymeAnalyzer {
   private globalRhymeMap: RhymeMap = new Map();
   private stanzaRhymeMap: StanzaRhymeMap = new Map();
-  private addedWords: Map<string, Set<string>> = new Map(); // phonemeKey -> Set of unique words
   private debug: boolean = true;
 
   constructor(debug: boolean = true) {
@@ -54,46 +61,39 @@ export class RhymeAnalyzer {
     return key;
   }
 
-  private shouldAddWord(word: string, phonemeKey: string): boolean {
-    const cleanWord = word.toLowerCase();
-    if (!this.addedWords.has(phonemeKey)) {
-      this.addedWords.set(phonemeKey, new Set([cleanWord]));
-      return true;
-    }
-
-    const wordsInGroup = this.addedWords.get(phonemeKey)!;
-    if (wordsInGroup.has(cleanWord)) {
-      return false;
-    }
-
-    wordsInGroup.add(cleanWord);
-    return true;
-  }
-
   addWord(wordObj: Word, position: WordPosition): void {
     const key = this.getPhonemeKey(wordObj.text);
     wordObj.phonemeKey = key;
-    
-    if (!key || !this.shouldAddWord(wordObj.text, key)) return;
+    if (!key) return;
 
-    // Add to global rhyme map
+    const cleanWord = wordObj.text.toLowerCase();
+
+    // add to global rhyme map
     if (!this.globalRhymeMap.has(key)) {
-      this.globalRhymeMap.set(key, new Set());
+      this.globalRhymeMap.set(key, new Map());
     }
-    this.globalRhymeMap.get(key)?.add(position);
+    const wordMap = this.globalRhymeMap.get(key)!;
+    if (!wordMap.has(cleanWord)) {
+      wordMap.set(cleanWord, new Set());
+    }
+    wordMap.get(cleanWord)!.add(position);
 
-    // Add to stanza-specific rhyme map
+    // add to stanza-specific map
     if (!this.stanzaRhymeMap.has(position.stanzaNumber)) {
       this.stanzaRhymeMap.set(position.stanzaNumber, new Map());
     }
     const stanzaMap = this.stanzaRhymeMap.get(position.stanzaNumber)!;
     if (!stanzaMap.has(key)) {
-      stanzaMap.set(key, new Set());
+      stanzaMap.set(key, new Map());
     }
-    stanzaMap.get(key)?.add(position);
+    const stanzaWordMap = stanzaMap.get(key)!;
+    if (!stanzaWordMap.has(cleanWord)) {
+      stanzaWordMap.set(cleanWord, new Set());
+    }
+    stanzaWordMap.get(cleanWord)!.add(position);
   }
 
-  findRhymes(word: string, stanzaNumber?: number): Set<WordPosition> | null {
+  findRhymes(word: string, stanzaNumber?: number): WordMap | null {
     const key = this.getPhonemeKey(word);
     if (!key) return null;
     
@@ -102,18 +102,26 @@ export class RhymeAnalyzer {
       const stanzaMap = this.stanzaRhymeMap.get(stanzaNumber);
       if (!stanzaMap) return null;
       
-      const rhymes = stanzaMap.get(key);
-      if (!rhymes) return null;
+      const wordMap = stanzaMap.get(key);
+      if (!wordMap) return null;
       
-      return new Set(Array.from(rhymes)
-        .filter(pos => pos.word.toLowerCase() !== cleanWord));
+      // filter out the input word
+      const rhymeMap = new Map(
+        Array.from(wordMap.entries())
+          .filter(([w]) => w !== cleanWord)
+      );
+      return rhymeMap.size > 0 ? rhymeMap : null;
     }
     
-    const rhymes = this.globalRhymeMap.get(key);
-    if (!rhymes) return null;
+    const wordMap = this.globalRhymeMap.get(key);
+    if (!wordMap) return null;
     
-    return new Set(Array.from(rhymes)
-      .filter(pos => pos.word.toLowerCase() !== cleanWord));
+    // filter out the input word
+    const rhymeMap = new Map(
+      Array.from(wordMap.entries())
+        .filter(([w]) => w !== cleanWord)
+    );
+    return rhymeMap.size > 0 ? rhymeMap : null;
   }
 
   getAllRhymeGroups(stanzaSpecific: boolean = false): RhymeGroup[] {
@@ -126,13 +134,12 @@ export class RhymeAnalyzer {
   private getGlobalRhymeGroups(): RhymeGroup[] {
     const groups: RhymeGroup[] = [];
     
-    this.globalRhymeMap.forEach((words, phonemeKey) => {
-      const uniqueWords = new Set(Array.from(words).map(w => w.word.toLowerCase()));
-      if (uniqueWords.size > 1) {
+    this.globalRhymeMap.forEach((wordMap, phonemeKey) => {
+      if (wordMap.size > 1) {
         groups.push({
           phonemeKey,
-          words,
-          frequency: uniqueWords.size
+          words: wordMap,
+          frequency: wordMap.size
         });
       }
     });
@@ -144,13 +151,12 @@ export class RhymeAnalyzer {
     const groups: RhymeGroup[] = [];
     
     this.stanzaRhymeMap.forEach((stanzaMap, stanzaNumber) => {
-      stanzaMap.forEach((words, phonemeKey) => {
-        const uniqueWords = new Set(Array.from(words).map(w => w.word.toLowerCase()));
-        if (uniqueWords.size > 1) {
+      stanzaMap.forEach((wordMap, phonemeKey) => {
+        if (wordMap.size > 1) {
           groups.push({
             phonemeKey,
-            words,
-            frequency: uniqueWords.size,
+            words: wordMap,
+            frequency: wordMap.size,
             stanzaNumber
           });
         }

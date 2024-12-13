@@ -7,7 +7,7 @@ interface PoemDisplayProps {
   poem: Poem;
   selectionMode: 'word' | 'line';
   onSelection: (item: Word | Line) => void;
-  containerWidthPercent: number; // triggers refit on resize
+  containerWidthPercent: number;
 }
 
 const PoemDisplay: React.FC<PoemDisplayProps> = ({
@@ -38,7 +38,6 @@ const PoemDisplay: React.FC<PoemDisplayProps> = ({
 
     const refitContent = useCallback(() => {
       const fittedSize = tryFitFontSize(originalFontSize);
-      // Only update state if it changed, to prevent infinite loops
       setFontSize(prev => prev !== fittedSize ? fittedSize : prev);
     }, [originalFontSize, tryFitFontSize]);
 
@@ -116,7 +115,7 @@ const PoemDisplay: React.FC<PoemDisplayProps> = ({
             inputMode="numeric"
             pattern="[0-9]*"
             className="text-center w-12 h-6 text-sm border rounded" 
-            value={fontSize} // Always show actual displayed font size
+            value={fontSize} 
             onChange={handleFontSizeChange}
             onBlur={handleBlur}
           />

@@ -64,7 +64,7 @@ ${poem?.toString()}${contextPrompt}
 
 ${specificAnalysis}
 
-Please provide detailed feedback and analysis addressing:
+Please provide detailed feedback addressing:
 1. Specific role and impact of this ${isWord ? 'word' : 'line'} in the poem's meaning
 2. Technical elements: ${isWord 
     ? 'sound patterns (including rhyme relationships), word choice, connotations, relationships to surrounding words, enjambment effects if present'

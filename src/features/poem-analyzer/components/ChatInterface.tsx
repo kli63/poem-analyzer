@@ -18,16 +18,17 @@ interface ChatInterfaceProps {
   containerWidthPercent: number;
 }
 
-// src/features/poem-analyzer/components/ChatInterface.tsx
+export type ChatInterfaceHandle = {
+  handleUserSelection: (unit: Word | Line) => void;
+};
 
-// ... (imports and interface definitions remain the same)
-
-const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => void }, ChatInterfaceProps>(
+const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
   ({ poem, containerWidthPercent }, ref) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [userContext, setUserContext] = useState('');
     const [currentlyTyping, setCurrentlyTyping] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const [fontSize, setFontSize] = useState<number>(12);
@@ -69,9 +70,13 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
       }
     });
 
-    useImperativeHandle(ref, () => ({
-      handleUserSelection
-    }));
+    useEffect(() => {
+      return () => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
+    }, []);
 
     useEffect(() => {
       if (chatContainerRef.current) {
@@ -91,18 +96,43 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
     };
 
     const handleUserSelection = async (unit: Word | Line) => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+        setCurrentlyTyping('');
+      }
+    
+      abortControllerRef.current = new AbortController();
+    
       const isWord = unit instanceof Word;
       const prompt = bot['createPrompt'](poem, unit, userContext);
-
+    
       setMessages(prev => [...prev, {
         type: 'user',
-        content: `Analyze this ${isWord ? 'word' : 'line'}: "${unit.toString()}"`,
+        content: `What do you think about this ${isWord ? 'word' : 'line'}: "${unit.toString()}"`,
         metadata: unit.getMetadata(),
         prompt: prompt
       }]);
-
-      await bot.generateResponse(poem, unit, userContext);
+    
+      try {
+        await bot.generateResponse(poem, unit, userContext, abortControllerRef.current.signal);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.name === 'AbortError' || error.message === 'AbortError') {
+            setCurrentlyTyping('');
+            setIsLoading(false);
+          } else {
+            console.error('Error generating response:', error);
+          }
+        } else {
+          console.error('Unknown error:', error);
+        }
+      }
     };
+
+    useImperativeHandle(ref, () => ({
+      handleUserSelection
+    }));
 
     const handleFontSizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const newSize = parseInt(event.target.value, 10);
@@ -164,7 +194,7 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
             inputMode="numeric"
             pattern="[0-9]*"
             className="text-center w-12 h-6 text-sm border rounded"
-            value={fontSize} // Show current displayed size
+            value={fontSize}
             onChange={handleFontSizeChange}
             onBlur={handleBlur}
           />
@@ -201,7 +231,7 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
                 }`}
               >
                 <div className="whitespace-pre-wrap">{message.content}</div>
-                {(message.metadata || message.prompt) && (
+                {/* {(message.metadata || message.prompt) && (
                   <div className="mt-2 text-xs opacity-75 text-left whitespace-pre-wrap">
                     {message.metadata && (
                       <div className="mb-2">
@@ -216,7 +246,7 @@ const ChatInterface = forwardRef<{ handleUserSelection: (unit: Word | Line) => v
                       </div>
                     )}
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           ))}

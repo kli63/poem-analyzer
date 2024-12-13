@@ -1,11 +1,10 @@
-// src/features/poem-analyzer/PoemAnalyzer.tsx
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { usePoemFile } from './hooks/usePoemFile';
 import { Word, Line } from './types/poem';
 import PoemAndChatContainer from './components/Canvas';
 import RhymeDictionary from './components/RhymeDictionary';
+import { ChatInterfaceHandle } from './components/ChatInterface';
 
 interface PoemAnalyzerProps {
   className?: string;
@@ -16,9 +15,13 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
   const [selectionMode, setSelectionMode] = useState<'word' | 'line'>('word');
   const [showRhymes, setShowRhymes] = useState(false);
   const [isStanzaMode, setIsStanzaMode] = useState(false);
+  
+  const chatInterfaceRef = useRef<ChatInterfaceHandle>(null);
 
   const handleSelection = (item: Word | Line) => {
-    alert(item.getMetadata());
+    // The Canvas component will now handle forwarding this to the chat interface
+    console.log(item.getMetadata());
+    // chatInterfaceRef.current?.handleUserSelection(item);
   };
 
   return (
@@ -76,6 +79,7 @@ const PoemAnalyzer: React.FC<PoemAnalyzerProps> = () => {
                   poem={poem}
                   selectionMode={selectionMode}
                   onSelection={handleSelection}
+                  chatInterfaceRef={chatInterfaceRef}
                 />
                 {showRhymes && (
                   <RhymeDictionary 

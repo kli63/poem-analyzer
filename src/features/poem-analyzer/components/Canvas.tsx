@@ -1,23 +1,25 @@
 // src/features/poem-analyzer/components/Canvas.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, RefObject } from 'react';
 import PoemDisplay from './PoemDisplay';
 import ChatInterface from './ChatInterface';
+import  { ChatInterfaceHandle } from './ChatInterface';
 import { Poem, Word, Line } from '../types/poem';
 
 interface PoemAndChatContainerProps {
   poem: Poem;
   selectionMode: 'word' | 'line';
   onSelection: (item: Word | Line) => void;
+  chatInterfaceRef: RefObject<ChatInterfaceHandle | null>;
 }
 
 const PoemAndChatContainer: React.FC<PoemAndChatContainerProps> = ({
   poem,
   selectionMode,
-  onSelection
+  onSelection,
+  chatInterfaceRef
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-
   const [leftWidth, setLeftWidth] = useState<number>(50);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -56,6 +58,7 @@ const PoemAndChatContainer: React.FC<PoemAndChatContainerProps> = ({
 
   const handleSelection = (item: Word | Line) => {
     onSelection(item);
+    chatInterfaceRef.current?.handleUserSelection(item);
   };
 
   const borderColor = '#ccc';
@@ -100,7 +103,6 @@ const PoemAndChatContainer: React.FC<PoemAndChatContainerProps> = ({
             selectionMode={selectionMode}
             onSelection={handleSelection} 
             containerWidthPercent={leftWidth} 
-            
           />
         </div>
       </div>
@@ -139,7 +141,7 @@ const PoemAndChatContainer: React.FC<PoemAndChatContainerProps> = ({
           <ChatInterface 
             poem={poem}
             containerWidthPercent={100 - leftWidth}
-            ref={null}
+            ref={chatInterfaceRef}
           />
         </div>
       </div>

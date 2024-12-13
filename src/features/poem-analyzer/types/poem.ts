@@ -7,14 +7,15 @@ export enum EnjambmentType {
   END_OF_LINE = 'End of enjambed line',
   START_OF_LINE = 'Start of enjambed line'
 }
+
 export class Word {
   private parentLine: Line | null = null;
   public enjambmentType: EnjambmentType = EnjambmentType.NONE;
   public rhymePositions: Set<WordPosition> | null = null;
   public phonemeKey: string | null = null;
-  public lineIndex: number = -1;      // Global line number in poem
-  public stanzaLineIndex: number = -1; // Line number within stanza
-  public stanzaNumber: number = -1;    // Which stanza this word is in
+  public lineIndex: number = -1; 
+  public stanzaLineIndex: number = -1;
+  public stanzaNumber: number = -1;
 
   constructor(
     public text: string,
@@ -154,7 +155,6 @@ export class Poem {
   ) {}
 
   addStanza(stanza: Stanza): void {
-    // const stanzaNumber = this.stanzas.length + 1;
     this.stanzas.push(stanza);
   }
 
@@ -249,7 +249,8 @@ export function parsePoemFromText(text: string, title?: string, author?: string)
       const trimmedLine = lineText.slice(indentMatch[0].length);
       const elements: LineElement[] = [];
       
-      const tokenRegex = /([a-zA-Z]+(?:[-''][a-zA-Z]+)*)|([^\w\s])|(\s+)/g;
+      // Updated Regex: Includes curly apostrophes
+      const tokenRegex = /([a-zA-Z]+(?:[-’'][a-zA-Z]+)*)|([^\w\s'])|(\s+)/g;
       let match: RegExpExecArray | null;
 
       while ((match = tokenRegex.exec(trimmedLine)) !== null) {

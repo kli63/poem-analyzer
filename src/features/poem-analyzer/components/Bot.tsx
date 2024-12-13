@@ -1,5 +1,3 @@
-// src/features/poem-analyzer/components/Bot.tsx
-
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Word, Line, Poem } from '../types/poem';
@@ -22,12 +20,25 @@ export class Bot {
 
     let specificAnalysis = '';
     if (isWord) {
-      const word = unit as Word;
+      const wordUnit = unit as Word;
+      const rhymeInfo = wordUnit.rhymePositions ? 
+        Array.from(wordUnit.rhymePositions)
+          .map(pos => `"${pos.word}" (line ${pos.lineIndex + 1}, stanza ${pos.stanzaNumber})`)
+          .join(', ') : 
+        'No rhymes found';
+
       specificAnalysis = `
 Analysis Focus: Single Word
-Word: "${word.text}"
-Line Context: "${word.getContext()}"
-Enjambment Status: ${word.enjambmentType}`;
+Word: "${wordUnit.text}"
+Line Context: "${wordUnit.getContext()}"
+Enjambment Status: ${wordUnit.enjambmentType}
+Phoneme Key: ${wordUnit.phonemeKey ?? 'None'}
+Rhymes with: ${rhymeInfo}`;
+
+      const hasRhymes = (wordUnit.rhymePositions && wordUnit.rhymePositions.size > 0);
+      if (hasRhymes) {
+        specificAnalysis += '\nInclude analysis of how this word\'s rhyme relationships contribute to the poem\'s sound patterns and meaning.';
+      }
     } else {
       const line = unit as Line;
       specificAnalysis = `
@@ -35,7 +46,7 @@ Analysis Focus: Full Line
 Line: "${line.toString()}"
 Indentation: ${line.indentation} spaces
 Enjambment Details:
-${line.getWords().map(word => `- "${word.text}": ${word.enjambmentType}`).join('\n')}
+${line.getWords().map(w => `- "${w.text}": ${w.enjambmentType}`).join('\n')}
 
 Stanza Context:
 ${line.getContext()}`;
@@ -50,7 +61,7 @@ ${specificAnalysis}
 Please provide detailed feedback and analysis addressing:
 1. Specific role and impact of this ${isWord ? 'word' : 'line'} in the poem's meaning
 2. Technical elements: ${isWord 
-    ? 'word choice, connotations, relationships to surrounding words, enjambment effects if present'
+    ? 'sound patterns (including rhyme relationships), word choice, connotations, relationships to surrounding words, enjambment effects if present'
     : 'rhythm, line breaks, enjambment patterns, relationship to surrounding lines'}
 3. How this ${isWord ? 'word' : 'line'} contributes to the poem's themes or imagery
 4. If relevant, specific suggestions for potential revisions or alternatives
@@ -58,24 +69,43 @@ Please provide detailed feedback and analysis addressing:
 Focus on providing concrete, specific feedback about this particular ${isWord ? 'word' : 'line'} rather than general observations about the poem.`;
   }
 
-  async generateResponse(poem: Poem | null, unit: Word | Line, userContext: string) {
+  async generateResponse(
+    poem: Poem | null, 
+    unit: Word | Line, 
+    userContext: string,
+    signal?: AbortSignal
+  ) {
     const { onResponse, onTyping, setIsLoading } = this.props;
     const prompt = this.createPrompt(poem, unit, userContext);
     
     setIsLoading(true);
     try {
       let fullResponse = '';
-      const stream = streamCompletion(prompt);
+      // Update streamCompletion to accept an options object
+      const stream = await streamCompletion({
+        prompt,
+        signal
+      });
 
       for await (const chunk of stream) {
+        if (signal?.aborted) {
+          throw new Error('AbortError');
+        }
         fullResponse += chunk;
         onTyping(fullResponse);
       }
 
       onResponse(fullResponse);
-    } catch (error) {
-      console.error('Error generating response:', error);
-      onResponse('Sorry, there was an error generating the response. Please try again.');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.name === 'AbortError' || error.message === 'AbortError') {
+          // Request was aborted, don't show error message
+        } else {
+          console.error('Error generating response:', error);
+          onResponse('Sorry, there was an error generating the response. Please try again.');
+        }
+      }
+      throw error;
     } finally {
       setIsLoading(false);
       onTyping('');
